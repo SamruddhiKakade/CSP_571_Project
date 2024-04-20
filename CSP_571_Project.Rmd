@@ -69,7 +69,7 @@ crime_counts <- crime_data_subset %>%
 total_crimes <- sum(crime_counts$n)
 crime_counts$percentage <- (crime_counts$n / total_crimes) * 100
 
-pie(crime_counts$percentage, labels = paste(crime_counts$`Primary Type`, "\n", round(crime_counts$percentage, 1), "%"), col = pie_colors, main = "Occurrences of Crime", cex = 0.5)
+pie(crime_counts$percentage, labels = paste(crime_counts$`Primary Type`, "\n", round(crime_counts$percentage, 1), "%"), col = rainbow(length(top_5_crimes$`Primary Type`)), main = "Occurrences of Crime", cex = 0.5)
 
 top_5_crimes <- head(crime_counts, 5)
 
