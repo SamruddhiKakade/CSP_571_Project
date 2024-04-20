@@ -6,8 +6,157 @@ date: "2024-04-1"
 
 ## CSP 571 Project
 
-```{}
-print("Working)
+### Data Preparation
+
+#### Importing data
+
+```{r}
+library(readr)
+crime_data <- read_csv("Crimes_-_2001_to_Present_20231109(1).csv")
+head(crime_data)
+```
+#### Taking a subset of the file for ease of trials
+```{r}
+crime_data_2020_to_2023 <- subset(crime_data, Year >= 2020 & Year <= 2023)
+write.csv(crime_data_2020_to_2023, file = "crime_data_2020_to_2023.csv", row.names = FALSE)
+```
+```{r}
+library(readr)
+crime_data_subset <- read_csv("crime_data_2020_to_2023.csv")
+str(crime_data_subset)
+```
+#### Removing irrelevant features
+```{r}
+library(dplyr)
+crime_data_subset <- select(crime_data_subset, Date, `Primary Type`, `Location Description`, District, `Community Area`, Arrest)
+str(crime_data_subset)
+```
+#### Removing duplicates and null values
+```{r}
+library(dplyr)
+crime_data_subset <- distinct(crime_data_subset)
+crime_data_subset <- na.omit(crime_data_subset)
+str(crime_data_subset)
+```
+#### Transforming date into seperate columns
+```{r}
+library(lubridate)
+crime_data_subset$Date <- mdy_hms(crime_data_subset$Date)
+
+crime_data_subset$Day <- day(crime_data_subset$Date)
+crime_data_subset$Month <- month(crime_data_subset$Date)
+crime_data_subset$Year <- year(crime_data_subset$Date)
+
+crime_data_subset$Time <- case_when(
+  hour(crime_data_subset$Date) >= 6 & hour(crime_data_subset$Date) < 12 ~ "Morning",
+  hour(crime_data_subset$Date) >= 12 & hour(crime_data_subset$Date) < 18 ~ "Afternoon",
+  hour(crime_data_subset$Date) >= 18 & hour(crime_data_subset$Date) < 24 ~ "Evening",
+  TRUE ~ "Night"
+)
+crime_data_subset <- select(crime_data_subset, -Date)
+head(crime_data_subset)
+```
+### Data Analysis
+
+#### Getting the top 5 crimes
+```{r}
+# install.packages("ggplot2")
+library(ggplot2)
+
+crime_counts <- crime_data_subset %>%
+  count(`Primary Type`, sort = TRUE)
+
+total_crimes <- sum(crime_counts$n)
+crime_counts$percentage <- (crime_counts$n / total_crimes) * 100
+
+pie(crime_counts$percentage, labels = paste(crime_counts$`Primary Type`, "\n", round(crime_counts$percentage, 1), "%"), col = pie_colors, main = "Occurrences of Crime", cex = 0.5)
+
+top_5_crimes <- head(crime_counts, 5)
+
+ggplot(top_5_crimes, aes(x = reorder(`Primary Type`, -n), y = n, fill = `Primary Type`)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = paste0(round((n / total_crimes) * 100, 1), "%")), vjust = -0.5, size = 3) +
+  labs(title = "Top 5 Crimes", x = "Crime Type", y = "Occurrences") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_manual(values = rainbow(length(top_5_crimes$`Primary Type`))) +
+  guides(fill = FALSE)
+```
+#### Getting the data for the top 5 crimes
+```{r}
+top_5_crimes_data <- crime_data_subset %>%
+  filter(`Primary Type` %in% top_5_crimes$`Primary Type`)
+str(top_5_crimes_data)
+```
+#### Analysing the crimes
+```{r}
+arrest_rate <- top_5_crimes_data %>%
+  group_by(`Primary Type`) %>%
+  summarise(arrest_rate = mean(Arrest, na.rm = TRUE))
+
+top_5_crimes_with_arrest_rate <- left_join(top_5_crimes, arrest_rate, by = "Primary Type")
+
+arrest_rate_percentage <- top_5_crimes_with_arrest_rate$arrest_rate * 100
+pie(arrest_rate_percentage, 
+    labels = paste(top_5_crimes_with_arrest_rate$`Primary Type`, "\n", round(arrest_rate_percentage, 2), "%"),
+    main = "Arrest Rates for Top 5 Crimes",
+    col = rainbow(length(arrest_rate_percentage))
+)
+```
+### Analysing spatial and temporal patterns for the top 5 crime types
+
+#### For the crime "Battery"
+
+##### Extract data for the crime "Battery"
+```{r}
+
+```
+##### Check crime distribution over District/Community for the crime "Battery"
+```{r}
+# Try to get a map of crime distribution also get arrest rate in the distribution
+```
+##### Check crime distribution over Location for the crime "Battery"
+```{r}
+# Get the percentage of the crime in different location description and output as a figure or chart. Also get arrest rate for the locations
+```
+##### Check crime distribution over Years/ in specific monts for the crime "Battery"
+```{r}
+# Get the percentage of the crime and arrest patterns according to years and months. 
 ```
 
+##### Add anything else necessary for spatial and temporal patterns
+```{r}
 
+```
+
+#### Repeat for the rest 4 crimes
+
+### Model Selection 
+```{r}
+
+```
+#### Feature selection techniques
+```{r}
+
+```
+#### Predictive analysis using KNN 
+```{r}
+
+```
+#### Predictive analysis using Random Forest 
+```{r}
+
+```
+#### Compare results of KNN and Random Forest and thus select a model 
+```{r}
+
+```
+### Model Fine tuning
+
+#### Fine tune the hyperparameters for the selected model ""
+```{r}
+
+```
+#### Get results for the fine tuned model
+```{r}
+
+```
