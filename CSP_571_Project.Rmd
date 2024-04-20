@@ -12,7 +12,8 @@ date: "2024-04-1"
 
 ```{r}
 library(readr)
-crime_data <- read_csv("Crimes_-_2001_to_Present_20231109(1).csv")
+path_file = "Crimes_-_2001_to_Present_20231109(1).csv"
+crime_data <- read_csv(path_file)
 head(crime_data)
 ```
 #### Taking a subset of the file for ease of trials
