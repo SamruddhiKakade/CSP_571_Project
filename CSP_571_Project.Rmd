@@ -103,28 +103,131 @@ pie(arrest_rate_percentage,
     col = rainbow(length(arrest_rate_percentage))
 )
 ```
+
 ### Analysing spatial and temporal patterns for the top 5 crime types
 
-#### For the crime "Battery"
 
-##### Extract data for the crime "Battery"
+### Analysing spatial and temporal patterns for the top 5 crime types
+
+
+### Spatial Analysis
+
+##### 1. Distribution of crimes by District and Community Area
+
 ```{r}
+library(dplyr)
+library(ggplot2)
+
+# Define specific crimes to analyze
+specific_crimes <- c("BATTERY", "THEFT", "MOTOR VEHICLE THEFT", "CRIMINAL DAMAGE", "ASSAULT")
+
+# Analyze each crime type
+for (crime in specific_crimes) {
+  cat("\n--- Spatial Analysis for:", crime, "---\n")
+  
+  crime_data_specific <- crime_data_subset %>% filter(`Primary Type` == crime)
+  
+  # Distribution by District
+  district_counts <- crime_data_specific %>%
+    count(District) %>%
+    mutate(District = factor(District))  # Ensuring District is treated as a factor for plotting
+
+  plot_districts <- ggplot(district_counts, aes(x = District, y = n, fill = District)) +
+    geom_bar(stat = "identity") +
+    labs(title = paste("Crime Distribution by District for", crime), x = "District", y = "Count") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+
+  print(plot_districts)
+}
 
 ```
-##### Check crime distribution over District/Community for the crime "Battery"
+##### 2. Arrest Rates by district and Community Area
+
 ```{r}
-# Try to get a map of crime distribution also get arrest rate in the distribution
+for (crime in specific_crimes) {
+  cat("\n--- Spatial Analysis of Arrest Rates for:", crime, "---\n")
+  
+  crime_data_specific <- crime_data_subset %>% filter(`Primary Type` == crime)
+  
+  # Arrest Rates by District
+  arrest_rate_district <- crime_data_specific %>%
+    group_by(District) %>%
+    summarise(Arrests = sum(Arrest, na.rm = TRUE),
+              Total = n(),
+              Arrest_Rate = (Arrests / Total) * 100) %>%
+    ungroup()
+
+  plot_arrest_district <- ggplot(arrest_rate_district, aes(x = reorder(District, -Arrest_Rate), y = Arrest_Rate, fill = District)) +
+    geom_col() +
+    labs(title = paste("Arrest Rate by District for", crime), x = "District", y = "Arrest Rate (%)") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+  print(plot_arrest_district)
+}
 ```
-##### Check crime distribution over Location for the crime "Battery"
+### Temporal Analysis
+
+##### 1. Crime Trend Over Years
+
+Code for Yearly Crime Trends:
+
 ```{r}
-# Get the percentage of the crime in different location description and output as a figure or chart. Also get arrest rate for the locations
-```
-##### Check crime distribution over Years/ in specific monts for the crime "Battery"
-```{r}
-# Get the percentage of the crime and arrest patterns according to years and months. 
+library(dplyr)
+library(ggplot2)
+
+# Analyze crime trends over years
+yearly_trends <- crime_data_subset %>%
+  count(Year, `Primary Type`, name = "Count") %>%
+  filter(`Primary Type` %in% specific_crimes)
+
+ggplot(yearly_trends, aes(x = Year, y = Count, color = `Primary Type`, group = `Primary Type`)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Yearly Crime Trends by Crime Type", x = "Year", y = "Number of Crimes") +
+  theme_minimal()
 ```
 
-##### Add anything else necessary for spatial and temporal patterns
+
+###### 2. Monthly Crime Distribution
+
+Code for Monthly Crime Distribution:
+
+```{r}
+# Monthly distribution of crimes
+monthly_distribution <- crime_data_subset %>%
+  count(Month, `Primary Type`, name = "Count") %>%
+  filter(`Primary Type` %in% specific_crimes)
+
+ggplot(monthly_distribution, aes(x = Month, y = Count, fill = `Primary Type`)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Monthly Distribution of Crimes by Type", x = "Month", y = "Number of Crimes") +
+  scale_x_continuous(breaks = 1:12, labels = month.abb) +
+  theme_minimal()
+```
+
+##### 3. Crime Frequency by Time of Day
+
+Code for Crime Frequency by Time of Day:
+
+```{r}
+# Monthly distribution of crimes
+monthly_distribution <- crime_data_subset %>%
+  count(Month, `Primary Type`, name = "Count") %>%
+  filter(`Primary Type` %in% specific_crimes)
+
+ggplot(monthly_distribution, aes(x = Month, y = Count, fill = `Primary Type`)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Monthly Distribution of Crimes by Type", x = "Month", y = "Number of Crimes") +
+  scale_x_continuous(breaks = 1:12, labels = month.abb) +
+  theme_minimal()
+```
+
+
+
+
+
+
 ```{r}
 
 ```
