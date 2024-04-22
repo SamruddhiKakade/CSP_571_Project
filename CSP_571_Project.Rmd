@@ -1,8 +1,13 @@
 ---
 title: "CSP_571_Project"
-output: html_document
+output:
+  pdf_document: default
+  html_document: defaul   t
 date: "2024-04-1"
 ---
+```{r}
+
+```
 
 ## CSP 571 Project
 
@@ -12,18 +17,20 @@ date: "2024-04-1"
 
 ```{r}
 library(readr)
-path_file = "Crimes_-_2001_to_Present_20231109(1).csv"
-crime_data <- read_csv(path_file)
+crime_data <- read_csv("Crimes_-_2001_to_Present_20231109(1).csv")
 head(crime_data)
 ```
 #### Taking a subset of the file for ease of trials
 ```{r}
-crime_data_2020_to_2023 <- subset(crime_data, Year >= 2020 & Year <= 2023)
-write.csv(crime_data_2020_to_2023, file = "crime_data_2020_to_2023.csv", row.names = FALSE)
+# crime_data_2020_to_2023 <- subset(crime_data, Year >= 2020 & Year <= 2023)
+# write.csv(crime_data_2020_to_2023, file = "crime_data_2020_to_2023.csv", row.names = FALSE)
 ```
+
+
 ```{r}
 library(readr)
 crime_data_subset <- read_csv("crime_data_2020_to_2023.csv")
+crime_model_data <- crime_data_subset
 str(crime_data_subset)
 ```
 #### Removing irrelevant features
@@ -70,9 +77,9 @@ crime_counts <- crime_data_subset %>%
 total_crimes <- sum(crime_counts$n)
 crime_counts$percentage <- (crime_counts$n / total_crimes) * 100
 
-top_5_crimes <- head(crime_counts, 5)
+pie(crime_counts$percentage, labels = paste(crime_counts$`Primary Type`, "\n", round(crime_counts$percentage, 1), "%"), col = rainbow(length(crime_counts$percentage)), main = "Occurrences of Crime", cex = 0.5)
 
-pie(crime_counts$percentage, labels = paste(crime_counts$`Primary Type`, "\n", round(crime_counts$percentage, 1), "%"), col = rainbow(length(top_5_crimes$`Primary Type`)), main = "Occurrences of Crime", cex = 0.5)
+top_5_crimes <- head(crime_counts, 5)
 
 ggplot(top_5_crimes, aes(x = reorder(`Primary Type`, -n), y = n, fill = `Primary Type`)) +
   geom_bar(stat = "identity") +
@@ -82,12 +89,14 @@ ggplot(top_5_crimes, aes(x = reorder(`Primary Type`, -n), y = n, fill = `Primary
   scale_fill_manual(values = rainbow(length(top_5_crimes$`Primary Type`))) +
   guides(fill = FALSE)
 ```
+
 #### Getting the data for the top 5 crimes
 ```{r}
 top_5_crimes_data <- crime_data_subset %>%
   filter(`Primary Type` %in% top_5_crimes$`Primary Type`)
 str(top_5_crimes_data)
 ```
+
 #### Analysing the crimes
 ```{r}
 arrest_rate <- top_5_crimes_data %>%
@@ -103,12 +112,6 @@ pie(arrest_rate_percentage,
     col = rainbow(length(arrest_rate_percentage))
 )
 ```
-
-### Analysing spatial and temporal patterns for the top 5 crime types
-
-
-### Analysing spatial and temporal patterns for the top 5 crime types
-
 
 ### Spatial Analysis
 
@@ -206,61 +209,178 @@ ggplot(monthly_distribution, aes(x = Month, y = Count, fill = `Primary Type`)) +
   theme_minimal()
 ```
 
-##### 3. Crime Frequency by Time of Day
-
-Code for Crime Frequency by Time of Day:
-
-```{r}
-# Monthly distribution of crimes
-monthly_distribution <- crime_data_subset %>%
-  count(Month, `Primary Type`, name = "Count") %>%
-  filter(`Primary Type` %in% specific_crimes)
-
-ggplot(monthly_distribution, aes(x = Month, y = Count, fill = `Primary Type`)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Monthly Distribution of Crimes by Type", x = "Month", y = "Number of Crimes") +
-  scale_x_continuous(breaks = 1:12, labels = month.abb) +
-  theme_minimal()
-```
-
-
-
-
-
-
-```{r}
-
-```
-
-#### Repeat for the rest 4 crimes
 
 ### Model Selection 
 ```{r}
+# Load necessary libraries
+library(caret)
+library(corrplot)
 
+# Convert categorical variables to factors
+crime_data_subset$`Primary Type` <- as.factor(crime_data_subset$`Primary Type`)
+crime_data_subset$`Location Description` <- as.factor(crime_data_subset$`Location Description`)
+crime_data_subset$District <- as.factor(crime_data_subset$District)
+crime_data_subset$`Community Area` <- as.factor(crime_data_subset$`Community Area`)
+crime_data_subset$Arrest <- as.factor(crime_data_subset$Arrest)
+crime_data_subset$Time <- as.factor(crime_data_subset$Time)
+
+# Correlation Matrix/HeatMap
+numeric_cols <- sapply(crime_data_subset, is.numeric)
+correlation_matrix <- cor(crime_data_subset[, numeric_cols])
+corrplot(correlation_matrix, method="circle")
+
+# PCA
+pca <- prcomp(crime_data_subset[, numeric_cols], center = TRUE, scale. = TRUE)
+summary(pca)
 ```
-#### Feature selection techniques
 ```{r}
-
+head(crime_model_data)
 ```
-#### Predictive analysis using KNN 
 ```{r}
-
+rf_pred <- predict(rf_model, crimeTest)
+print(head(rf_pred))
 ```
-#### Predictive analysis using Random Forest 
-```{r}
 
+#### Predictive analysis using Random Forest
+```{r}
+# Load necessary libraries
+library(randomForest)
+library(class)
+library(caret)
+library(gmodels)
+
+crime_model_data <- save_data
+
+# Drop unnecessary columns
+crime_model_data$ID <- NULL
+crime_model_data$`Case Number` <- NULL
+crime_model_data$Block <- NULL
+crime_model_data$IUCR <- NULL
+crime_model_data$Description <- NULL
+crime_model_data$`Location Description` <- NULL
+crime_model_data$Beat <- NULL
+crime_model_data$District <- NULL
+crime_model_data$Ward <- NULL
+crime_model_data$`Community Area` <- NULL
+crime_model_data$`FBI Code` <- NULL
+crime_model_data$`X Coordinate` <- NULL
+crime_model_data$`Y Coordinate` <- NULL
+crime_model_data$`Updated On` <- NULL
+crime_model_data$Location <- NULL
+
+# Remove rows with missing values
+crime_model_data <- na.omit(crime_model_data)
+
+# Remove columns with all missing values
+crime_model_data <- crime_model_data[, colSums(is.na(crime_model_data)) != nrow(crime_model_data)]
+
+# Identify classes with only one record
+class_counts <- table(crime_model_data$`Primary Type`)
+single_record_classes <- names(class_counts[class_counts == 1])
+
+# Remove these classes
+for (class in single_record_classes) {
+  crime_model_data <- crime_model_data[!(crime_model_data$`Primary Type` == class),]
+}
+
+# Convert categorical variables into factors
+crime_model_data$Arrest <- as.factor(crime_model_data$Arrest)
+crime_model_data$Domestic <- as.factor(crime_model_data$Domestic)
+crime_model_data$Year <- as.factor(crime_model_data$Year)
+
+# Convert 'Primary Type' to a factor
+crime_model_data$`Primary Type` <- as.factor(crime_model_data$`Primary Type`)
+
+# Split the data into training and testing sets
+set.seed(123)
+trainIndex <- createDataPartition(crime_model_data$`Primary Type`, p = .7, 
+                                  list = TRUE, 
+                                  times = 1)
+crimeTrain <- crime_model_data[ trainIndex$Resample1,]
+crimeTest  <- crime_model_data[-trainIndex$Resample1,]
+
+# Check if the saved model file exists
+if (file.exists("rf_model.rds")) {
+  # Load the model
+  rf_model <- readRDS(file = "rf_model.rds")
+} else {
+  # Train the Random Forest model
+  set.seed(123)
+  rf_model <- randomForest(`Primary Type` ~ ., data = crimeTrain, ntree = 100)
+  
+  # Save the model
+  saveRDS(rf_model, file = "rf_model.rds")
+}
+
+# Evaluate the model
+rf_pred <- predict(rf_model, crimeTest)
+
+# Ensure that both rf_pred and crimeTest$`Primary Type` have the same levels
+rf_pred <- factor(rf_pred, levels = levels(crimeTest$`Primary Type`))
+
+# Create a cross table of the predicted and actual values
+CrossTable(x = rf_pred, y = crimeTest$`Primary Type`,
+           prop.chisq = FALSE, # Do not compute chi-squared test
+           prop.t = FALSE, # Do not compute t-test
+           prop.r = FALSE, # Do not compute row proportions
+           dnn = c('predicted', 'actual')) # Set the names of the dimensions
 ```
-#### Compare results of KNN and Random Forest and thus select a model 
-```{r}
 
+#### Predictive analysis using KNN
+
+```{r}
+# Load necessary library
+library(class)
+
+# Normalize the data
+normalize <- function(x) {
+  return ((x - min(x)) / (max(x) - min(x)))
+}
+
+crimeTrain_norm <- as.data.frame(lapply(crimeTrain[,sapply(crimeTrain, is.numeric)], normalize))
+crimeTest_norm <- as.data.frame(lapply(crimeTest[,sapply(crimeTest, is.numeric)], normalize))
+
+# Prepare training and test set
+train_labels <- crimeTrain$`Primary Type`
+test_labels <- crimeTest$`Primary Type`
+
+# Check if the saved model file exists
+if (file.exists("knn_model.rds")) {
+  # Load the model
+  knn_pred <- readRDS(file = "knn_model.rds")
+} else {
+  # Perform KNN
+set.seed(123)
+knn_pred <- knn(train = crimeTrain_norm, test = crimeTest_norm, cl = train_labels, k=3)
+  
+}
+
+# Ensure that both knn_pred and test_labels have the same levels
+knn_pred <- factor(knn_pred, levels = levels(test_labels))
+
+# Create a cross table of the predicted and actual values
+CrossTable(x = knn_pred, y = test_labels,
+           prop.chisq = FALSE, # Do not compute chi-squared test
+           prop.t = FALSE, # Do not compute t-test
+           prop.r = FALSE, # Do not compute row proportions
+           dnn = c('predicted', 'actual')) # Set the names of the dimensions
 ```
-### Model Fine tuning
 
-#### Fine tune the hyperparameters for the selected model ""
+
+#### Compare the models
 ```{r}
+# Load necessary library
+library(ggplot2)
 
-```
-#### Get results for the fine tuned model
-```{r}
+# Reshape the data for plotting
+comparison_melt <- reshape2::melt(comparison, id.vars = "Model")
 
+# Create a bar plot
+ggplot(comparison_melt, aes(x = Model, y = value, fill = variable)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Model", y = "Score", fill = "Metric") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set1") +
+  theme(legend.position = "bottom") +
+  geom_text(aes(label = round(value, 2)), vjust = -0.3, position = position_dodge(0.9))
 ```
